@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil Analisis - Digital Image Forensics</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .forensic-bg {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    }
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .result-glow-real {
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+      border: 2px solid #22c55e;
+    }
+    .result-glow-fake {
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+      border: 2px solid #ef4444;
+    }
+    .result-glow-suspect {
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
+      border: 2px solid #f59e0b;
+    }
+    .confidence-bar {
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e);
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .confidence-fill {
+      height: 100%;
+      background: #3b82f6;
+      border-radius: 4px;
+      transition: width 1s ease-in-out;
+    }
+    .pulse-real {
+      animation: pulse-real 2s infinite;
+    }
+    .pulse-fake {
+      animation: pulse-fake 2s infinite;
+    }
+    @keyframes pulse-real {
+      0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
+      50% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.8); }
+    }
+    @keyframes pulse-fake {
+      0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.8); }
+    }
+  </style>
+</head>
+<body class="forensic-bg min-h-screen flex items-center justify-center p-4">
+  <div class="container mx-auto max-w-4xl">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <a href="/" class="inline-flex items-center text-green-400 hover:text-green-300 mb-4">
+        <i class="fas fa-arrow-left mr-2"></i>Kembali ke Analisis
+      </a>
+      <h1 class="text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+        Hasil Analisis Forensik
+      </h1>
+      <p class="text-gray-300 mt-2">Laporan Deteksi Keaslian Gambar Digital</p>
+    </div>
+
+    <!-- Main Result Card -->
+    <div class="glass-effect rounded-2xl p-8 mb-8 {% if 'Asli' in prediction %}result-glow-real pulse-real{% elif 'Palsu' in prediction %}result-glow-fake pulse-fake{% else %}result-glow-suspect{% endif %}">
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <!-- Image Preview -->
+        <div class="text-center">
+          <div class="relative inline-block">
+            <img src="{{ image_path }}" alt="Gambar yang dianalisis" 
+                 class="w-80 h-80 object-cover rounded-xl mx-auto border-2 {% if 'Asli' in prediction %}border-green-400{% elif 'Palsu' in prediction %}border-red-400{% else %}border-yellow-400{% endif %}">
+            <div class="absolute top-4 right-4 {% if 'Asli' in prediction %}bg-green-500{% elif 'Palsu' in prediction %}bg-red-500{% else %}bg-yellow-500{% endif %} text-white px-3 py-1 rounded-full text-sm font-semibold">
+              {% if 'Asli' in prediction %}ASLI{% elif 'Palsu' in prediction %}PALSU{% else %}SUSPECT{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div class="space-y-6">
+          <!-- Result Badge -->
+          <div class="text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full {% if 'Asli' in prediction %}bg-green-500{% elif 'Palsu' in prediction %}bg-red-500{% else %}bg-yellow-500{% endif %} mb-4">
+              {% if 'Asli' in prediction %}
+                <i class="fas fa-check text-white text-2xl"></i>
+              {% elif 'Palsu' in prediction %}
+                <i class="fas fa-times text-white text-2xl"></i>
+              {% else %}
+                <i class="fas fa-question text-white text-2xl"></i>
+              {% endif %}
+            </div>
+            <h2 class="text-3xl font-bold {% if 'Asli' in prediction %}text-green-400{% elif 'Palsu' in prediction %}text-red-400{% else %}text-yellow-400{% endif %} mb-2">
+              {{ prediction }}
+            </h2>
+          </div>
+
+          <!-- Confidence Meter -->
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-300 font-semibold">Tingkat Keyakinan:</span>
+              <span class="text-2xl font-bold {% if confidence >= 80 %}text-green-400{% elif confidence >= 60 %}text-yellow-400{% else %}text-red-400{% endif %}">
+                {{ confidence }}%
+              </span>
+            </div>
+            <div class="confidence-bar">
+              <div class="confidence-fill" style="width: {{ confidence }}%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400">
+              <span>Rendah</span>
+              <span>Sedang</span>
+              <span>Tinggi</span>
+            </div>
+          </div>
+
+          <!-- Technical Details -->
+          <div class="bg-gray-800 rounded-xl p-4">
+            <h4 class="text-white font-semibold mb-3 flex items-center">
+              <i class="fas fa-info-circle mr-2 text-blue-400"></i>Detail Teknis
+            </h4>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span class="text-gray-400">Model:</span>
+                <span class="text-white ml-2">CNN</span>
+              </div>
+              <div>
+                <span class="text-gray-400">Dataset:</span>
+                <span class="text-white ml-2">CASIA 2.0</span>
+              </div>
+              <div>
+                <span class="text-gray-400">Algorithm:</span>
+                <span class="text-white ml-2">Hybrid Rules</span>
+              </div>
+              <div>
+                <span class="text-gray-400">Status:</span>
+                <span class="{% if 'Asli' in prediction %}text-green-400{% elif 'Palsu' in prediction %}text-red-400{% else %}text-yellow-400{% endif %} ml-2 font-semibold">
+                  {% if 'Asli' in prediction %}TERVERIFIKASI{% elif 'Palsu' in prediction %}TERMANIPULASI{% else %}PERLU ANALISIS LANJUT{% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="glass-effect rounded-2xl p-8">
+      <h3 class="text-2xl font-bold text-white mb-6 text-center flex items-center justify-center">
+        <i class="fas fa-lightbulb mr-3 text-yellow-400"></i>Rekomendasi Forensik
+      </h3>
+      
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- If Real -->
+        {% if 'Asli' in prediction and confidence >= 70 %}
+        <div class="bg-green-900 bg-opacity-30 rounded-xl p-6 border-l-4 border-green-400">
+          <h4 class="text-lg font-semibold text-green-400 mb-3 flex items-center">
+            <i class="fas fa-shield-check mr-2"></i>Gambar Terverifikasi
+          </h4>
+          <ul class="text-green-300 space-y-2 text-sm">
+            <li>• Gambar menunjukkan karakteristik asli</li>
+            <li>• Tidak terdeteksi manipulasi signifikan</li>
+            <li>• Dapat digunakan sebagai bukti digital</li>
+            <li>• Tetap lakukan verifikasi metadata</li>
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- If Fake -->
+        {% if 'Palsu' in prediction and confidence >= 70 %}
+        <div class="bg-red-900 bg-opacity-30 rounded-xl p-6 border-l-4 border-red-400">
+          <h4 class="text-lg font-semibold text-red-400 mb-3 flex items-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>Terdeteksi Manipulasi
+          </h4>
+          <ul class="text-red-300 space-y-2 text-sm">
+            <li>• Gambar menunjukkan tanda-tanda manipulasi</li>
+            <li>• Lakukan analisis metadata tambahan</li>
+            <li>• Periksa konsistensi lighting dan shadow</li>
+            <li>• Verifikasi dengan tools forensik lain</li>
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- If Low Confidence -->
+        {% if confidence < 70 %}
+        <div class="bg-yellow-900 bg-opacity-30 rounded-xl p-6 border-l-4 border-yellow-400">
+          <h4 class="text-lg font-semibold text-yellow-400 mb-3 flex items-center">
+            <i class="fas fa-microscope mr-2"></i>Perlu Analisis Mendalam
+          </h4>
+          <ul class="text-yellow-300 space-y-2 text-sm">
+            <li>• Confidence level berada di zona abu-abu</li>
+            <li>• Disarankan analisis dengan multiple tools</li>
+            <li>• Periksa metadata dan EXIF data</li>
+            <li>• Gunakan Error Level Analysis (ELA)</li>
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- General Recommendations -->
+        <div class="bg-blue-900 bg-opacity-30 rounded-xl p-6 border-l-4 border-blue-400">
+          <h4 class="text-lg font-semibold text-blue-400 mb-3 flex items-center">
+            <i class="fas fa-tools mr-2"></i>Tools Forensik Lanjutan
+          </h4>
+          <ul class="text-blue-300 space-y-2 text-sm">
+            <li>• <strong>Forensically</strong>: Online image forensics toolkit</li>
+            <li>• <strong>Ghiro</strong>: Automated image forensics</li>
+            <li>• <strong>JPEGsnoop</strong>: JPEG image analysis</li>
+            <li>• <strong>ExifTool</strong>: Metadata analysis</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-8 text-gray-400">
+      <p class="flex items-center justify-center">
+        <i class="fas fa-graduation-cap mr-2"></i>
+        Sistem Forensik Digital - Deteksi Keaslian Gambar © 2025
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Animate confidence bar
+    document.addEventListener('DOMContentLoaded', function() {
+      const confidenceFill = document.querySelector('.confidence-fill');
+      confidenceFill.style.width = '0%';
+      setTimeout(() => {
+        confidenceFill.style.width = '{{ confidence }}%';
+      }, 500);
+    });
+  </script>
+</body>
+</html>

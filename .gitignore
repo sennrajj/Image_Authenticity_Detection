@@ -1,0 +1,11 @@
+dataset/
+dataset/**
+
+model/*.h5
+model/*.keras
+model/**
+
+static/uploads/
+
+__pycache__/
+*.pyc
